@@ -129,3 +129,6 @@ dmypy.json
 .pyre/
 .idea
 tests
+src/database
+src/model
+src/config.yaml
