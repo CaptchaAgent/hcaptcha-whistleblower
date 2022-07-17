@@ -61,12 +61,12 @@ class SentinelScheduler:
         )
 
         # [⚔] Gracefully run scheduler.
-
         try:
             self.scheduler.start()
             while True:
                 time.sleep(3600)
         except (KeyboardInterrupt, EOFError):
+            self.scheduler.shutdown()
             logger.debug(
                 ToolBox.runtime_report(
                     motive="EXITS",
