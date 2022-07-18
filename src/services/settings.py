@@ -78,3 +78,34 @@ class LarkSettings:
 class SentinelSettings:
     s = config_.get("sentinel", {})
     INTERVAL_SECONDS = s.get("interval_seconds", 60 * 10)
+
+
+class CollectorSettings:
+    s = config_.get("collector", {})
+    INTERVAL_SECONDS = s.get("interval_seconds", 60 * 10)
+
+    # 采集器中的默认聚焦挑战，不在聚焦表中的挑战将被跳过
+    FOCUS_LABELS = {
+        "lion yawning with open mouth": "lion yawning with open mouth",
+        "lion with closed eyes": "lion with closed eyes",
+        "horse with white legs": "horse with white legs",
+        "living room": "living room",
+        "horse": "horse",
+    }
+
+    # 采集器默认的 rainbow key，用于合成彩虹表
+    # focus labels 会被自动填充到 rainbow key 中
+    PENDING_LABELS = [
+        "domestic cat",
+        "vertical river",
+        "airplane in the sky flying left",
+        "airplanes in the sky that are flying to the right",
+        "elephants drawn with leaves",
+        "seaplane",
+        "airplane",
+        "bicycle",
+        "train",
+        "bedroom",
+        "lion",
+        "bridge",
+    ]

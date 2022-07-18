@@ -14,18 +14,21 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from services.guarder import Guarder
+from services.guarder import RainbowClaimer
 from services.larker import LarkAlert
 from services.settings import (
     LarkSettings,
     logger,
     DIR_CHALLENGE,
+    DIR_RAINBOW_BACKUP,
     SentinelSettings,
+    CollectorSettings,
     TOP_LEVEL_SITEKEY,
 )
-from services.utils import ToolBox, get_challenge_ctx
+from services.utils import ToolBox
 
 
-class SentinelScheduler:
+class ChallengeScheduler:
     def __init__(
         self,
         silence: Optional[bool] = True,
@@ -41,13 +44,17 @@ class SentinelScheduler:
 
         # 服务注册
         self.scheduler = BackgroundScheduler()
+        self.services_settings = {self.tango: SentinelSettings, self.waltz: CollectorSettings}
 
-    def deploy_on_vps(self):
-        interval_seconds = SentinelSettings.INTERVAL_SECONDS
+    def deploy_on_vps(self, self_func, job_name: str):
+        settings_ = self.services_settings[self_func]
+        interval_seconds = settings_.INTERVAL_SECONDS
+
         logger.info(
             ToolBox.runtime_report(
                 motive="JOB",
                 action_name=self.action_name,
+                job_name=job_name,
                 message="deployment task scheduler",
                 interval_seconds=interval_seconds,
             )
@@ -55,9 +62,9 @@ class SentinelScheduler:
 
         # [⚔] Deploying Sentinel-Monitored Scheduled Tasks
         self.scheduler.add_job(
-            func=self.tango,
+            func=self_func,
             trigger=IntervalTrigger(seconds=interval_seconds, timezone="Asia/Shanghai", jitter=5),
-            name="tango",
+            name=job_name,
         )
 
         # [⚔] Gracefully run scheduler.
@@ -82,11 +89,36 @@ class SentinelScheduler:
             silence=self.silence,
             lang=self.lang,
             debug=self.debug,
-        ) as rs:
-            rs.tango(ctx=rs.ctx_session)
+        ) as sentinel:
+            logger.info(
+                ToolBox.runtime_report(
+                    motive="BUILD", action_name=sentinel.action_name, monitor=sentinel.monitor_site
+                )
+            )
+            sentinel.tango(sentinel.ctx_session)
+
+    def waltz(self):
+        with ChallengeCollector(
+            dir_rainbow_backup=DIR_RAINBOW_BACKUP,
+            focus_labels=CollectorSettings.FOCUS_LABELS,
+            pending_labels=CollectorSettings.PENDING_LABELS,
+            sitekey=random.choice(TOP_LEVEL_SITEKEY),
+            debug=self.debug,
+            silence=self.silence,
+        ) as collector:
+            logger.info(
+                ToolBox.runtime_report(
+                    motive="BUILD",
+                    action_name=collector.action_name,
+                    monitor=collector.monitor_site,
+                )
+            )
+            collector.claim(collector.ctx_session)
 
 
 class ChallengeSentinel(Guarder):
+    """hCAPTCHA New Challenge Sentinel"""
+
     def __init__(
         self,
         dir_challenge: str,
@@ -103,9 +135,7 @@ class ChallengeSentinel(Guarder):
         :param silence:
         :param lang:
         """
-        self.silence = silence
-
-        super().__init__(dir_workspace=dir_challenge, lang=lang, debug=debug)
+        super().__init__(dir_workspace=dir_challenge, lang=lang, debug=debug, silence=silence)
         sitekey = "ace50dd0-0d68-44ff-931a-63b670c7eed7" if sitekey is None else sitekey
         self.monitor_site = f"https://accounts.hcaptcha.com/demo?sitekey={sitekey}"
 
@@ -116,35 +146,6 @@ class ChallengeSentinel(Guarder):
         # 服务注册
         self.action_name = "ChallengeSentinel"
         self.lark = LarkAlert(LarkSettings.APP_ID, LarkSettings.APP_SECRET)
-        self.ctx_session = None
-
-    def __enter__(self):
-        self.ctx_session = get_challenge_ctx(silence=self.silence, lang=self.lang)
-        logger.info(
-            ToolBox.runtime_report(
-                motive="BUILD",
-                action_name=self.action_name,
-                message="Summons Tango Sentinel units",
-                monitor=self.monitor_site,
-            )
-        )
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        try:
-            if self.ctx_session:
-                self.ctx_session.quit()
-        except AttributeError:
-            pass
-
-        logger.success(
-            ToolBox.runtime_report(
-                motive="OFFLOAD",
-                action_name=self.action_name,
-                message="Offload Tango Sentinel units",
-                monitor=self.monitor_site,
-            )
-        )
 
     def lock_challenge(self):
         """缓存加锁，防止新挑战的重复警报"""
@@ -243,3 +244,71 @@ class ChallengeSentinel(Guarder):
 
                 # 拉响警报 | 出现新的挑战
                 self.broadcast_alert_information()
+
+
+class ChallengeCollector(RainbowClaimer):
+    """hCAPTCHA Focus Challenge Collector"""
+
+    def __init__(
+        self,
+        dir_rainbow_backup: str,
+        focus_labels: Optional[dict] = None,
+        pending_labels: Optional[list] = None,
+        sitekey: str = None,
+        debug: Optional[bool] = None,
+        silence: Optional[bool] = None,
+    ):
+        super().__init__(
+            dir_rainbow_backup=dir_rainbow_backup,
+            focus_labels=focus_labels,
+            pending_labels=pending_labels,
+            sitekey=sitekey,
+            debug=debug,
+            silence=silence,
+        )
+
+    def claim(self, ctx, retry_times=5):
+        if not self.label_alias:
+            logger.error(
+                ToolBox.runtime_report(
+                    motive="CLAIM", action_name=self.action_name, message="聚焦挑战为空，无法启动采集器任务"
+                )
+            )
+            return
+        logger.info(
+            ToolBox.runtime_report(
+                motive="CLAIM",
+                action_name=self.action_name,
+                message="启动采集器",
+                focus=self.label_alias,
+            )
+        )
+        super().claim(ctx, retry_times)
+
+    def unpack(self):
+        statistics_: Optional[dict] = super().unpack()
+        for flag in statistics_:
+            count = statistics_[flag]
+            if count:
+                logger.success(f"UNPACK [{flag}] --> count={count}")
+
+    def update(self, path_rainbow_yaml: str):
+        if not self.pending_labels:
+            logger.error(
+                ToolBox.runtime_report(
+                    motive="RAINBOW", action_name=self.action_name, message="预设的彩虹键为空，无法启动采集器任务"
+                )
+            )
+            return
+        rainbow_hash = super().update(path_rainbow_yaml)
+        if rainbow_hash:
+            logger.success(f"RAINBOW_HASH: {rainbow_hash}")
+        else:
+            logger.error(
+                ToolBox.runtime_report(
+                    motive="RAINBOW",
+                    action_name=self.action_name,
+                    message="彩虹表数据库不存在",
+                    path=path_rainbow_yaml,
+                )
+            )

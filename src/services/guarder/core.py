@@ -22,7 +22,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from undetected_chromedriver import Chrome
 
 from services.settings import logger
-from services.utils import AshFramework, ToolBox
+from services.utils import AshFramework, ToolBox, get_challenge_ctx
 from .exceptions import ChallengePassed, LabelNotFoundException, ChallengeLangException
 
 
@@ -107,7 +107,13 @@ class Guarder:
     # <backcall> (New Challenge) Types of challenges not yet scheduled
     CHALLENGE_BACKCALL = "backcall"
 
-    def __init__(self, dir_workspace: str = None, lang: Optional[str] = "zh", debug=False):
+    def __init__(
+        self,
+        dir_workspace: str = None,
+        lang: Optional[str] = "en",
+        debug=False,
+        silence: Optional[bool] = True,
+    ):
         if not isinstance(lang, str) or not self.label_alias.get(lang):
             raise ChallengeLangException(
                 f"Challenge language [{lang}] not yet supported."
@@ -116,6 +122,7 @@ class Guarder:
 
         self.action_name = "ArmorCaptcha"
         self.debug = debug
+        self.silence = silence
 
         # 存储挑战图片的目录
         self.runtime_workspace = ""
@@ -140,6 +147,26 @@ class Guarder:
         self.dir_workspace = dir_workspace if dir_workspace else "."
 
         self.threat = 0
+        self.ctx_session = None
+
+    def __enter__(self):
+        self.ctx_session = get_challenge_ctx(silence=self.silence, lang=self.lang)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            if self.ctx_session:
+                self.ctx_session.quit()
+        except AttributeError:
+            pass
+
+        logger.success(
+            ToolBox.runtime_report(
+                motive="OFFLOAD",
+                action_name=self.action_name,
+                message=f"Offload {self.action_name} units",
+            )
+        )
 
     def _init_workspace(self):
         """初始化工作目录，存放缓存的挑战图片"""

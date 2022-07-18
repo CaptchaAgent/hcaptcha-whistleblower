@@ -7,60 +7,48 @@ import hashlib
 import os
 import random
 import time
+from typing import Optional
 
 import yaml
 
-from services.settings import logger
 from .core import Guarder
 
 
 class RainbowClaimer(Guarder):
-    TOP_LEVEL_SITEKEY = [
-        "f5561ba9-8f1e-40ca-9b5b-a0b3f719ef34",  # discord
-        "91e4137f-95af-4bc9-97af-cdcedce21c8c",  # epic
-        "adafb813-8b5c-473f-9de3-485b4ad5aa09",  # top level
-        "ace50dd0-0d68-44ff-931a-63b670c7eed7",  # top level
-    ]
-
-    def __init__(self, focus_labels: dict, dir_rainbow_backup: str, sitekey: str = None):
+    def __init__(
+        self,
+        dir_rainbow_backup: str,
+        focus_labels: Optional[dict] = None,
+        pending_labels: Optional[list] = None,
+        sitekey: str = None,
+        lang: Optional[str] = "en",
+        debug: Optional[bool] = None,
+        silence: Optional[bool] = None,
+    ):
         """
-
-        :param sitekey:
         :param focus_labels: 不在 claiming_label 中的挑战将被跳过，左为 split label 右为编排数据
         :param dir_rainbow_backup: RainbowClaimer 工作空间，需要与普通挑战业务线隔离
+        :param sitekey:
+        :param lang:
+        :param debug:
+        :param silence:
         """
         self.dir_rainbow_backup = dir_rainbow_backup
         dir_challenge = os.path.join(self.dir_rainbow_backup, "_challenge")
 
-        super().__init__(dir_workspace=dir_challenge, lang="en", debug=True)
-        sitekey = random.choice(self.TOP_LEVEL_SITEKEY) if sitekey is None else sitekey
-        self.claim_site = f"https://accounts.hcaptcha.com/demo?sitekey={sitekey}"
+        super().__init__(dir_workspace=dir_challenge, lang=lang, debug=debug, silence=silence)
+        sitekey = "adafb813-8b5c-473f-9de3-485b4ad5aa09" if sitekey is None else sitekey
+        self.monitor_site = f"https://accounts.hcaptcha.com/demo?sitekey={sitekey}"
 
         # 1. 添加 label_alias
         # ---------------------------------------------------
         # 不在 alias 中的挑战将被跳过
-        self.label_alias = focus_labels
+        self.label_alias = {} if not focus_labels else focus_labels
 
         # 2. 创建彩虹键
         # ---------------------------------------------------
         # 彩虹表中的 rainbow key
-        self.pending_labels = [
-            "domestic cat",
-            "vertical river",
-            "airplane in the sky flying left",
-            "airplanes in the sky that are flying to the right",
-            "elephants drawn with leaves",
-            "seaplane",
-            "airplane",
-            "bicycle",
-            "train",
-            "bedroom",
-            "lion",
-            "bridge",
-            "lion yawning with open mouth",
-            "lion with closed eyes",
-            "horse with white legs",
-        ]
+        self.pending_labels = [] if not pending_labels else pending_labels
         if self.label_alias:
             pending_labels = set(self.pending_labels)
             for rainbow_key in self.label_alias.values():
@@ -95,24 +83,23 @@ class RainbowClaimer(Guarder):
         loop_times = -1
         start = time.time()
 
-        # 启动一个协程的 challenger 任务
-        # 总共访问网页 retry_times 次，单词访问中连续刷新5次挑战
         while loop_times < retry_times:
             loop_times += 1
 
             # 有头模式下自动最小化
-            ctx.get(self.claim_site)
+            ctx.get(self.monitor_site)
             ctx.minimize_window()
 
             # 激活 Checkbox challenge
             self.anti_checkbox(ctx)
 
-            for _ in range(5):
+            for _ in range(random.randint(5, 8)):
                 # 更新挑战框架 | 任务提前结束或进入失败
                 if self.switch_to_challenge_frame(ctx) in [
                     self.CHALLENGE_SUCCESS,
                     self.CHALLENGE_REFRESH,
                 ]:
+                    loop_times -= 1
                     break
 
                 # 勾取数据集 | 跳过非聚焦挑战
@@ -120,7 +107,7 @@ class RainbowClaimer(Guarder):
 
                 # 随机休眠 | 降低请求频率
                 if time.time() - start < 180:
-                    time.sleep(random.uniform(2, 4))
+                    time.sleep(random.uniform(2, 3))
                     continue
 
                 # 解包数据集 | 1次/3minutes
@@ -169,7 +156,7 @@ class RainbowClaimer(Guarder):
                         file.write(data)
                         count += 1
 
-        logger.success(f"UNPACK [{flag}] - {count=}")
+        return count
 
     def unpack(self):
         """
@@ -180,10 +167,14 @@ class RainbowClaimer(Guarder):
 
         :return:
         """
+        statistics_ = {}
         for flag in self.pending_labels:
-            self._unpack(dst_dir=os.path.join(self.dir_rainbow_backup, flag), flag=flag)
+            statistics_[flag] = self._unpack(
+                dst_dir=os.path.join(self.dir_rainbow_backup, flag), flag=flag
+            )
+        return statistics_
 
-    def update(self, path_rainbow_yaml: str):
+    def update(self, path_rainbow_yaml: str) -> Optional[str]:
         """
         更新彩虹表
 
@@ -194,8 +185,7 @@ class RainbowClaimer(Guarder):
         """
 
         if not os.path.exists(self.dir_rainbow_backup):
-            logger.error("彩虹表数据库不存在")
-            return False
+            return
 
         # 初始化彩虹表数据容器
         _rainbow_table = {}
@@ -232,5 +222,4 @@ class RainbowClaimer(Guarder):
 
         # 更新彩虹表 Hash 值
         with open(path_rainbow_yaml, "rb") as file:
-            data = file.read()
-        logger.success(f"RAINBOW_HASH: {hashlib.sha256(data).hexdigest()}")
+            return hashlib.sha256(file.read()).hexdigest()

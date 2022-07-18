@@ -5,7 +5,7 @@
 # Description:
 from typing import Optional
 
-from services.deploy import SentinelScheduler
+from services.deploy import ChallengeScheduler
 from services.settings import logger
 from services.utils import ToolBox
 
@@ -27,7 +27,7 @@ def run(
         )
     )
 
-    sentinel = SentinelScheduler(silence=silence, lang=lang, debug=debug)
+    scheduler = ChallengeScheduler(silence=silence, lang=lang, debug=debug)
     if not deploy:
-        return sentinel.tango()
-    return sentinel.deploy_on_vps()
+        return scheduler.tango()
+    return scheduler.deploy_on_vps(scheduler.tango, "sentinel")

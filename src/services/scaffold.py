@@ -5,7 +5,7 @@
 # Description:
 from typing import Optional
 
-from apis.scaffold import runner, sentinel
+from apis.scaffold import collector, sentinel
 
 
 class Scaffold:
@@ -14,15 +14,22 @@ class Scaffold:
         pass
 
     @staticmethod
-    def rainbow(console: Optional[bool] = None, silence: Optional[bool] = True):
+    def collector(
+        deploy: Optional[bool] = None,
+        silence: Optional[bool] = True,
+        lang: Optional[str] = "en",
+        debug: Optional[bool] = None,
+    ):
         """
-        彩虹表控制接口
+        彩虹表控制接口 數據采集
 
+        :param deploy:
         :param silence:
-        :param console: Default False. 控制台，手动控制启动模式。
+        :param lang:
+        :param debug:
         :return:
         """
-        runner.rainbow_generator(console=console, silence=silence)
+        collector.startup(deploy=deploy, silence=silence, lang=lang, debug=debug)
 
     @staticmethod
     def sentinel(
