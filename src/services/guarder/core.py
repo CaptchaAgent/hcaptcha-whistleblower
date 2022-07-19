@@ -52,46 +52,35 @@ class Guarder:
             "卧室": "bedroom",
             "桥梁": "bridge",
             "狮子": "lion",
+            "客厅": "living room",
+            # "微笑狗":"smiling dog",
         },
         "en": {
             "airplane": "airplane",
-            "аirplane": "airplane",
             "motorbus": "bus",
-            "mοtorbus": "bus",
             "bus": "bus",
             "truck": "truck",
-            "truсk": "truck",
             "motorcycle": "motorcycle",
-            "mοtorcycle": "motorcycle",
             "boat": "boat",
-            "bοat": "boat",
             "bicycle": "bicycle",
-            "bіcycle": "bicycle",
             "train": "train",
-            "trаin": "train",
             "vertical river": "vertical river",
             "airplane in the sky flying left": "airplane in the sky flying left",
-            "Please select all airplanes in the sky that are flying to the rіght": "airplanes in the sky that are flying to the right",
             "Please select all airplanes in the sky that are flying to the right": "airplanes in the sky that are flying to the right",
-            "Please select all the elephants drawn with lеaves": "elephants drawn with leaves",
             "Please select all the elephants drawn with leaves": "elephants drawn with leaves",
             "seaplane": "seaplane",
-            "ѕeaplane": "seaplane",
             "car": "car",
-            "сar": "car",
             "domestic cat": "domestic cat",
-            "domestic сat": "domestic cat",
             "bedroom": "bedroom",
-            "bеdroom": "bedroom",
             "lion": "lion",
-            "lіon": "lion",
-            "brіdge": "bridge",
             "bridge": "bridge",
+            "living room": "living room",
+            # "smiling dog": "smiling dog"
         },
     }
 
     # 左错右对
-    BAD_CODE = {"а": "a", "е": "e", "e": "e", "i": "i", "і": "i", "ο": "o", "с": "c"}
+    BAD_CODE = {"а": "a", "е": "e", "e": "e", "i": "i", "і": "i", "ο": "o", "с": "c", "ԁ": "d"}
     HOOK_CHALLENGE = "//iframe[contains(@title,'content')]"
 
     # <success> Challenge Passed by following the expected
@@ -220,13 +209,6 @@ class Guarder:
         # 断言超时，刷新页面
         return self.CHALLENGE_REFRESH
 
-    def clean_label(self, raw_label: str) -> str:
-        """清洗误码 | 将不规则 UNICODE 字符替换成正常的英文字符"""
-        clean_label = raw_label
-        for c in self.BAD_CODE:
-            clean_label = clean_label.replace(c, self.BAD_CODE[c])
-        return clean_label
-
     def get_label(self, ctx: Chrome):
         def split_prompt_message(prompt_message: str) -> str:
             """根据指定的语种在提示信息中分离挑战标签"""
@@ -239,6 +221,13 @@ class Guarder:
                 else prompt_message,
             }
             return labels_mirror[self.lang]
+
+        def label_cleaning(raw_label: str) -> str:
+            """清洗误码 | 将不规则 UNICODE 字符替换成正常的英文字符"""
+            clean_label = raw_label
+            for c in self.BAD_CODE:
+                clean_label = clean_label.replace(c, self.BAD_CODE[c])
+            return clean_label
 
         # Necessary.
         time.sleep(0.5)
@@ -259,7 +248,7 @@ class Guarder:
         except (AttributeError, IndexError):
             raise LabelNotFoundException("获取到异常的标签对象。")
         else:
-            self.label = self.clean_label(_label)
+            self.label = label_cleaning(_label)
             self.log(message="Get label", label=f"「{self.label}」")
 
     def mark_samples(self, ctx: Chrome):

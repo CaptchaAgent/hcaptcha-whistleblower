@@ -91,6 +91,7 @@ class CollectorSettings:
         "horse with white legs": "horse with white legs",
         "living room": "living room",
         "horse": "horse",
+        "smiling dog": "smiling dog"
     }
 
     # 采集器默认的 rainbow key，用于合成彩虹表

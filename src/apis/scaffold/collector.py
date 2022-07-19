@@ -31,7 +31,7 @@ def _interactive_console(silence: Optional[bool] = None, debug: Optional[bool] =
     while i := input(">> [1]采集; [2]解包; [3]更新 - ").strip():
         if i == "1":
             with get_challenge_ctx(silence=silence, lang="en") as ctx:
-                cc.claim(ctx, retry_times=20)
+                return cc.claim(ctx, retry_times=20)
         if i == "2":
             return cc.unpack()
         if i == "3":
