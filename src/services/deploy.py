@@ -280,7 +280,8 @@ class ChallengeCollector(RainbowClaimer):
                 motive="CLAIM",
                 action_name=self.action_name,
                 message="启动采集器",
-                focus=self.label_alias,
+                focus=[self.label_alias.keys()],
+                sitekey=self.sitekey,
             )
         )
         super().claim(ctx, retry_times)

@@ -75,7 +75,8 @@ class AshFramework:
 
         # 弹性分发
         task_list = []
-        async with aiohttp.ClientSession() as session:
+        connector = aiohttp.TCPConnector(force_close=True)
+        async with aiohttp.ClientSession(connector=connector) as session:
             for _ in range(workers):
                 task = self.launcher(session=session)
                 task_list.append(task)

@@ -59,13 +59,13 @@ config_ = ToolBox.check_sample_yaml(
 
 
 class LogLevel:
-    EXCEPTION = 2**0
-    DEBUG = 2**1
-    INFO = 2**2
-    SUCCESS = 2**3
-    WARNING = 2**4
-    ERROR = 2**5
-    CRITICAL = 2**6
+    EXCEPTION = 2 ** 0
+    DEBUG = 2 ** 1
+    INFO = 2 ** 2
+    SUCCESS = 2 ** 3
+    WARNING = 2 ** 4
+    ERROR = 2 ** 5
+    CRITICAL = 2 ** 6
 
 
 class LarkSettings:
@@ -86,22 +86,23 @@ class CollectorSettings:
 
     # 采集器中的默认聚焦挑战，不在聚焦表中的挑战将被跳过
     FOCUS_LABELS = {
-        "lion yawning with open mouth": "lion yawning with open mouth",
-        "lion with closed eyes": "lion with closed eyes",
-        "horse with white legs": "horse with white legs",
-        "living room": "living room",
-        "horse": "horse",
-        "smiling dog": "smiling dog"
+        "lion yawning with open mouth": "lion_yawning_with_open_mouth",
+        "lion with closed eyes": "lion_with_closed_eyes",
+        "horse with white legs": "horse_with_white_legs",
+        "smiling dog": "smiling_dog",
+        "parrot bird with eyes open": "parrot_bird_with_eyes_open",
+        "elephant with long tusk": "elephant_with_long_tusk",
+
     }
 
     # 采集器默认的 rainbow key，用于合成彩虹表
-    # focus labels 会被自动填充到 rainbow key 中
+    # focus labels 会被自动填充到 rainbow key
     PENDING_LABELS = [
-        "domestic cat",
-        "vertical river",
-        "airplane in the sky flying left",
-        "airplanes in the sky that are flying to the right",
-        "elephants drawn with leaves",
+        "domestic_cat",
+        "vertical_river",
+        "airplane_in_the_sky_flying_left",
+        "airplanes_in_the_sky_that_are_flying_to_the_right",
+        "elephants_drawn_with_leaves",
         "seaplane",
         "airplane",
         "bicycle",
@@ -109,4 +110,7 @@ class CollectorSettings:
         "bedroom",
         "lion",
         "bridge",
+        "living_room",
+        "horse",
+        "conference_room",
     ]

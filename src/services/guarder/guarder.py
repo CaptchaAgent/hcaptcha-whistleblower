@@ -37,8 +37,8 @@ class RainbowClaimer(Guarder):
         dir_challenge = os.path.join(self.dir_rainbow_backup, "_challenge")
 
         super().__init__(dir_workspace=dir_challenge, lang=lang, debug=debug, silence=silence)
-        sitekey = "adafb813-8b5c-473f-9de3-485b4ad5aa09" if sitekey is None else sitekey
-        self.monitor_site = f"https://accounts.hcaptcha.com/demo?sitekey={sitekey}"
+        self.sitekey = "adafb813-8b5c-473f-9de3-485b4ad5aa09" if sitekey is None else sitekey
+        self.monitor_site = f"https://accounts.hcaptcha.com/demo?sitekey={self.sitekey}"
 
         # 1. 添加 label_alias
         # ---------------------------------------------------
@@ -107,7 +107,7 @@ class RainbowClaimer(Guarder):
 
                 # 随机休眠 | 降低请求频率
                 if time.time() - start < 180:
-                    time.sleep(random.uniform(2, 3))
+                    time.sleep(random.uniform(1, 2))
                     continue
 
                 # 解包数据集 | 1次/3minutes
@@ -183,7 +183,6 @@ class RainbowClaimer(Guarder):
 
         :return:
         """
-
         if not os.path.exists(self.dir_rainbow_backup):
             return
 

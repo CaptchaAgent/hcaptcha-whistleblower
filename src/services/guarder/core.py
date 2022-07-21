@@ -14,7 +14,7 @@ from selenium.common.exceptions import (
     ElementNotVisibleException,
     TimeoutException,
     WebDriverException,
-    NoSuchElementException,
+    NoSuchElementException, StaleElementReferenceException,
 )
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -53,7 +53,10 @@ class Guarder:
             "桥梁": "bridge",
             "狮子": "lion",
             "客厅": "living room",
+            "一匹马": "horse",
+            "会议室": "conference room",
             # "微笑狗":"smiling dog",
+            # "长颈鹿": "giraffe",
         },
         "en": {
             "airplane": "airplane",
@@ -75,12 +78,25 @@ class Guarder:
             "lion": "lion",
             "bridge": "bridge",
             "living room": "living room",
+            "horse": "horse",
+            "conference room": "conference room",
             # "smiling dog": "smiling dog"
+            # "giraffe": "giraffe",
         },
     }
 
     # 左错右对
-    BAD_CODE = {"а": "a", "е": "e", "e": "e", "i": "i", "і": "i", "ο": "o", "с": "c", "ԁ": "d"}
+    BAD_CODE = {
+        "а": "a",
+        "е": "e",
+        "e": "e",
+        "i": "i",
+        "і": "i",
+        "ο": "o",
+        "с": "c",
+        "ԁ": "d",
+        "ѕ": "s",
+    }
     HOOK_CHALLENGE = "//iframe[contains(@title,'content')]"
 
     # <success> Challenge Passed by following the expected
@@ -399,6 +415,8 @@ class Guarder:
             self.refresh_hcaptcha(ctx)
         except ChallengePassed:
             ctx.refresh()
+        except StaleElementReferenceException:
+            return
         except WebDriverException as err:
             logger.exception(err)
         finally:

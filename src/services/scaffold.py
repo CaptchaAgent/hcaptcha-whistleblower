@@ -18,18 +18,24 @@ class Scaffold:
         deploy: Optional[bool] = None,
         silence: Optional[bool] = True,
         lang: Optional[str] = "en",
-        debug: Optional[bool] = None,
+        debug: Optional[bool] = False,
+        sitekey: Optional[str] = None,
+        merge: Optional[bool] = False,
     ):
         """
         彩虹表控制接口 數據采集
 
+        :param merge:
+        :param sitekey:
         :param deploy:
         :param silence:
         :param lang:
         :param debug:
         :return:
         """
-        collector.startup(deploy=deploy, silence=silence, lang=lang, debug=debug)
+        collector.startup(
+            deploy=deploy, silence=silence, lang=lang, debug=debug, site_key=sitekey, merge=merge
+        )
 
     @staticmethod
     def sentinel(
