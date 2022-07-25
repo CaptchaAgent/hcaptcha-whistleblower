@@ -50,6 +50,7 @@ TOP_LEVEL_SITEKEY = [
     "91e4137f-95af-4bc9-97af-cdcedce21c8c",  # epic
     "adafb813-8b5c-473f-9de3-485b4ad5aa09",  # top level
     "ace50dd0-0d68-44ff-931a-63b670c7eed7",  # top level
+    "edc4ce89-8903-4906-80b1-7440ad9a69c8",  # cloud horse
 ]
 
 config_ = ToolBox.check_sample_yaml(
@@ -59,13 +60,13 @@ config_ = ToolBox.check_sample_yaml(
 
 
 class LogLevel:
-    EXCEPTION = 2 ** 0
-    DEBUG = 2 ** 1
-    INFO = 2 ** 2
-    SUCCESS = 2 ** 3
-    WARNING = 2 ** 4
-    ERROR = 2 ** 5
-    CRITICAL = 2 ** 6
+    EXCEPTION = 2**0
+    DEBUG = 2**1
+    INFO = 2**2
+    SUCCESS = 2**3
+    WARNING = 2**4
+    ERROR = 2**5
+    CRITICAL = 2**6
 
 
 class LarkSettings:
@@ -77,7 +78,7 @@ class LarkSettings:
 
 class SentinelSettings:
     s = config_.get("sentinel", {})
-    INTERVAL_SECONDS = s.get("interval_seconds", 60 * 10)
+    INTERVAL_SECONDS = s.get("interval_seconds", 60 * 8)
 
 
 class CollectorSettings:
@@ -86,13 +87,12 @@ class CollectorSettings:
 
     # 采集器中的默认聚焦挑战，不在聚焦表中的挑战将被跳过
     FOCUS_LABELS = {
-        "lion yawning with open mouth": "lion_yawning_with_open_mouth",
-        "lion with closed eyes": "lion_with_closed_eyes",
-        "horse with white legs": "horse_with_white_legs",
-        "smiling dog": "smiling_dog",
-        "parrot bird with eyes open": "parrot_bird_with_eyes_open",
-        "elephant with long tusk": "elephant_with_long_tusk",
-
+        # "lion yawning with open mouth": "lion_yawning_with_open_mouth",
+        # "lion with closed eyes": "lion_with_closed_eyes",
+        # "horse with white legs": "horse_with_white_legs",
+        # "parrot bird with eyes open": "parrot_bird_with_eyes_open",
+        # "elephant with long tusk": "elephant_with_long_tusk",
+        "horse made of clouds": "horse_made_of_clouds"
     }
 
     # 采集器默认的 rainbow key，用于合成彩虹表
@@ -113,4 +113,7 @@ class CollectorSettings:
         "living_room",
         "horse",
         "conference_room",
+        "smiling_dog",
+        "dog",
+        "horse_made_of_clouds",
     ]

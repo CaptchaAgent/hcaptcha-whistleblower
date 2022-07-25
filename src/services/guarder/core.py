@@ -14,7 +14,9 @@ from selenium.common.exceptions import (
     ElementNotVisibleException,
     TimeoutException,
     WebDriverException,
-    NoSuchElementException, StaleElementReferenceException,
+    NoSuchElementException,
+    StaleElementReferenceException,
+    ElementClickInterceptedException,
 )
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -55,7 +57,8 @@ class Guarder:
             "客厅": "living room",
             "一匹马": "horse",
             "会议室": "conference room",
-            # "微笑狗":"smiling dog",
+            "微笑狗": "smiling dog",
+            "狗": "dog",
             # "长颈鹿": "giraffe",
         },
         "en": {
@@ -80,7 +83,8 @@ class Guarder:
             "living room": "living room",
             "horse": "horse",
             "conference room": "conference room",
-            # "smiling dog": "smiling dog"
+            "smiling dog": "smiling dog",
+            "dog": "dog",
             # "giraffe": "giraffe",
         },
     }
@@ -96,6 +100,7 @@ class Guarder:
         "с": "c",
         "ԁ": "d",
         "ѕ": "s",
+        "һ": "h",
     }
     HOOK_CHALLENGE = "//iframe[contains(@title,'content')]"
 
@@ -413,7 +418,7 @@ class Guarder:
             self.mark_samples(ctx)
             self.download_images()
             self.refresh_hcaptcha(ctx)
-        except ChallengePassed:
+        except (ChallengePassed, ElementClickInterceptedException):
             ctx.refresh()
         except StaleElementReferenceException:
             return

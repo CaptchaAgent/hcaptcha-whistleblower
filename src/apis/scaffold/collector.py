@@ -11,15 +11,7 @@ from services.settings import DIR_RAINBOW_BACKUP, PATH_RAINBOW_YAML, logger, Col
 from services.utils import get_challenge_ctx, ToolBox
 
 
-def _interactive_console(sitekey=None, silence=None, debug=None, merge=None):
-    """
-
-    :type sitekey: str
-    :type silence: bool
-    :type debug: bool
-    :type merge: bool
-    :return:
-    """
+def _interactive_console(sitekey=None, silence=None, debug=None, merge=None, unpack=None):
     debug = True if debug is None else debug
     cc = ChallengeCollector(
         dir_rainbow_backup=DIR_RAINBOW_BACKUP,
@@ -32,9 +24,12 @@ def _interactive_console(sitekey=None, silence=None, debug=None, merge=None):
     # 合并彩虹表
     if merge:
         return cc.update(PATH_RAINBOW_YAML)
+    # 解压数据集
+    if unpack:
+        return cc.unpack()
     # 采集数据集 | 自动解包数据集
     with get_challenge_ctx(silence=silence, lang="en") as ctx:
-        return cc.claim(ctx, retry_times=2000)
+        return cc.claim(ctx, retry_times=500)
 
 
 def startup(
@@ -44,6 +39,7 @@ def startup(
     debug: Optional[bool] = None,
     site_key: Optional[str] = None,
     merge: Optional[bool] = None,
+    unpack: Optional[bool] = None,
 ):
     """根据label定向采集数据集"""
     logger.info(
@@ -53,5 +49,7 @@ def startup(
     )
     scheduler = ChallengeScheduler(silence=silence, lang=lang, debug=debug)
     if not deploy:
-        return _interactive_console(silence=silence, debug=debug, sitekey=site_key, merge=merge)
+        return _interactive_console(
+            silence=silence, debug=debug, sitekey=site_key, merge=merge, unpack=unpack
+        )
     return scheduler.deploy_on_vps(scheduler.waltz, "collector")

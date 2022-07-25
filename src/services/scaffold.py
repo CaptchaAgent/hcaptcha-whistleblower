@@ -21,10 +21,12 @@ class Scaffold:
         debug: Optional[bool] = False,
         sitekey: Optional[str] = None,
         merge: Optional[bool] = False,
+        unpack: Optional[bool] = False,
     ):
         """
         彩虹表控制接口 數據采集
 
+        :param unpack:
         :param merge:
         :param sitekey:
         :param deploy:
@@ -34,7 +36,13 @@ class Scaffold:
         :return:
         """
         collector.startup(
-            deploy=deploy, silence=silence, lang=lang, debug=debug, site_key=sitekey, merge=merge
+            deploy=deploy,
+            silence=silence,
+            lang=lang,
+            debug=debug,
+            site_key=sitekey,
+            merge=merge,
+            unpack=unpack,
         )
 
     @staticmethod

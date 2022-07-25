@@ -139,9 +139,11 @@ class RainbowClaimer(Guarder):
         # 1. 拼接挑戰圖片的絕對路徑
         # 2. 读取二进制流编成hash文件名
         # 3. 写到目标路径
-        count = 0
+        samples = set()
         for dir_challenge_cache_name in os.listdir(src_dir):
-            if flag not in dir_challenge_cache_name or dir_challenge_cache_name.endswith(".png"):
+            if flag != dir_challenge_cache_name.split("_", 1)[
+                -1
+            ] or dir_challenge_cache_name.endswith(".png"):
                 continue
             path_fs = os.path.join(src_dir, dir_challenge_cache_name)
             for img_filename in os.listdir(path_fs):
@@ -154,9 +156,9 @@ class RainbowClaimer(Guarder):
                 if not _exists_files.get(filename):
                     with open(os.path.join(dst_dir, filename), "wb") as file:
                         file.write(data)
-                        count += 1
+                        samples.add(filename)
 
-        return count
+        return len(samples)
 
     def unpack(self):
         """

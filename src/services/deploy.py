@@ -6,10 +6,8 @@
 import os.path
 import random
 import time
-from datetime import timedelta, datetime
 from typing import Optional, Union, Tuple
 
-import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -40,7 +38,6 @@ class ChallengeScheduler:
         self.debug = debug
 
         self.action_name = "SentinelScheduler"
-        self.end_date = datetime.now(pytz.timezone("Asia/Shanghai")) + timedelta(days=360)
 
         # 服务注册
         self.scheduler = BackgroundScheduler()
@@ -68,12 +65,13 @@ class ChallengeScheduler:
         )
 
         # [⚔] Gracefully run scheduler.
+        self.scheduler.start()
+
         try:
-            self.scheduler.start()
             while True:
                 time.sleep(3600)
         except (KeyboardInterrupt, EOFError):
-            self.scheduler.shutdown()
+            self.scheduler.shutdown(wait=False)
             logger.debug(
                 ToolBox.runtime_report(
                     motive="EXITS",
@@ -285,6 +283,9 @@ class ChallengeCollector(RainbowClaimer):
             )
         )
         super().claim(ctx, retry_times)
+        logger.success(
+            ToolBox.runtime_report(motive="SHUTDOWN", action_name=self.action_name, message="采集器退出")
+        )
 
     def unpack(self):
         statistics_: Optional[dict] = super().unpack()
