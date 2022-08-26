@@ -7,7 +7,14 @@ from typing import Optional
 
 from services.deploy import ChallengeCollector
 from services.deploy import ChallengeScheduler
-from services.settings import DIR_RAINBOW_BACKUP, PATH_RAINBOW_YAML, logger, CollectorSettings
+from services.guarder import CollectorT
+from services.settings import (
+    DIR_RAINBOW_BACKUP,
+    PATH_RAINBOW_YAML,
+    logger,
+    CollectorSettings,
+    DIR_CANVAS_BACKUP,
+)
 from services.utils import get_challenge_ctx, ToolBox
 
 
@@ -53,3 +60,24 @@ def startup(
             silence=silence, debug=debug, sitekey=site_key, merge=merge, unpack=unpack
         )
     return scheduler.deploy_on_vps(scheduler.waltz, "collector")
+
+
+def canvas_mining(
+    silence: Optional[bool] = None,
+    debug: Optional[bool] = None,
+    site_key: Optional[str] = None,
+    retry_times: int = 5,
+):
+    logger.warning(
+        ToolBox.runtime_report(
+            motive="SETUP[dev]",
+            action_name="ScaffoldCanvas",
+            silence=silence,
+            debug=debug,
+            retry=retry_times,
+        )
+    )
+
+    ct = CollectorT(dir_canvas_backup=DIR_CANVAS_BACKUP, sitekey=site_key, silence=silence)
+    with get_challenge_ctx(silence=False, lang="en") as ctx:
+        ct.claim(ctx, retry_times=retry_times)

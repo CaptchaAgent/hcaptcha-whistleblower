@@ -118,6 +118,11 @@ def get_challenge_ctx(silence: Optional[bool] = None, lang: Optional[str] = None
 
     :return:
     """
+    from selenium.webdriver import DesiredCapabilities
+
+    capabilities = DesiredCapabilities.CHROME
+    capabilities["goog:loggingPrefs"] = {"performance": "ALL"}
+
     # Control headless browser
     silence = True if silence is None or "linux" in sys.platform else silence
 
@@ -129,7 +134,7 @@ def get_challenge_ctx(silence: Optional[bool] = None, lang: Optional[str] = None
     # - Restrict the language of hCaptcha label
     # - Environment variables are valid only in the current process
     # and do not affect other processes in the operating system
-    os.environ["LANGUAGE"] = "zh_CN" if lang is None else lang
+    os.environ["LANGUAGE"] = "zh" if lang is None else lang
     options.add_argument(f"--lang={os.getenv('LANGUAGE')}")
 
     if silence is True:

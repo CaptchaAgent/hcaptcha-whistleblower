@@ -63,3 +63,21 @@ class Scaffold:
         :return:
         """
         sentinel.run(deploy=deploy, silence=silence, lang=lang, debug=debug)
+
+    @staticmethod
+    def mining(
+        silence: Optional[bool] = True,
+        debug: Optional[bool] = None,
+        site_key: Optional[str] = None,
+        r: int = 5,
+    ):
+        """
+        采集 image area select challenge 数据集
+
+        :param r:
+        :param silence:
+        :param debug:
+        :param site_key:
+        :return:
+        """
+        collector.canvas_mining(silence=silence, debug=debug, site_key=site_key, retry_times=r)

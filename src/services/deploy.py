@@ -11,6 +11,7 @@ from typing import Optional, Union, Tuple
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
+from services.guarder import CollectorT
 from services.guarder import Guarder
 from services.guarder import RainbowClaimer
 from services.larker import LarkAlert

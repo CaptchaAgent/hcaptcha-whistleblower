@@ -17,6 +17,7 @@ from selenium.common.exceptions import (
     NoSuchElementException,
     StaleElementReferenceException,
     ElementClickInterceptedException,
+    ElementNotInteractableException,
 )
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -101,6 +102,7 @@ class Guarder:
         "ԁ": "d",
         "ѕ": "s",
         "һ": "h",
+        "р": "p",
     }
     HOOK_CHALLENGE = "//iframe[contains(@title,'content')]"
 
@@ -231,13 +233,20 @@ class Guarder:
         return self.CHALLENGE_REFRESH
 
     def get_label(self, ctx: Chrome):
+        """
+        获取人机挑战需要识别的图片类型（标签）
+
+        :param ctx:
+        :return:
+        """
+
         def split_prompt_message(prompt_message: str) -> str:
             """根据指定的语种在提示信息中分离挑战标签"""
             labels_mirror = {
                 "zh": re.split(r"[包含 图片]", prompt_message)[2][:-1]
                 if "包含" in prompt_message
                 else prompt_message,
-                "en": re.split(r"containing a", prompt_message)[-1][1:].strip()
+                "en": re.split(r"containing a", prompt_message)[-1][1:].strip().replace(".", "")
                 if "containing" in prompt_message
                 else prompt_message,
             }
@@ -250,34 +259,56 @@ class Guarder:
                 clean_label = clean_label.replace(c, self.BAD_CODE[c])
             return clean_label
 
-        # Necessary.
-        time.sleep(0.5)
-
-        # Wait for the element to fully load.
-        try:
-            label_obj = WebDriverWait(ctx, 5, ignored_exceptions=ElementNotVisibleException).until(
-                EC.presence_of_element_located((By.XPATH, "//h2[@class='prompt-text']"))
-            )
-        except TimeoutException:
-            raise ChallengePassed("人机挑战意外通过")
+        # Scan and determine the type of challenge.
+        for _ in range(3):
+            try:
+                label_obj = WebDriverWait(
+                    ctx, 5, ignored_exceptions=ElementNotVisibleException
+                ).until(EC.presence_of_element_located((By.XPATH, "//h2[@class='prompt-text']")))
+            except TimeoutException:
+                raise ChallengePassed("Man-machine challenge unexpectedly passed")
+            else:
+                self.prompt = label_obj.text
+                if self.prompt:
+                    break
+                time.sleep(1)
+                continue
+        # Skip the `draw challenge`
         else:
-            self.prompt = label_obj.text
+            fn = f"{int(time.time())}.image_label_area_select.png"
+            self.log(
+                message="Pass challenge",
+                challenge="image_label_area_select",
+                site_link=ctx.current_url,
+                screenshot=self.captcha_screenshot(ctx, fn),
+            )
+            return self.CHALLENGE_BACKCALL
 
-        # Get Challenge Prompt.
+        # Continue the `click challenge`
         try:
             _label = split_prompt_message(prompt_message=self.prompt)
         except (AttributeError, IndexError):
-            raise LabelNotFoundException("获取到异常的标签对象。")
+            raise LabelNotFoundException("Get the exception label object")
         else:
             self.label = label_cleaning(_label)
             self.log(message="Get label", label=f"「{self.label}」")
 
     def mark_samples(self, ctx: Chrome):
+        """
+        Get the download link and locator of each challenge image
+
+        :param ctx:
+        :return:
+        """
         # 等待图片加载完成
-        WebDriverWait(ctx, 10, ignored_exceptions=ElementNotVisibleException).until(
-            EC.presence_of_all_elements_located((By.XPATH, "//div[@class='task-image']"))
-        )
-        time.sleep(1)
+        try:
+            WebDriverWait(ctx, 5, ignored_exceptions=ElementNotVisibleException).until(
+                EC.presence_of_all_elements_located((By.XPATH, "//div[@class='task-image']"))
+            )
+        except TimeoutException:
+            pass
+
+        time.sleep(0.3)
 
         # DOM 定位元素
         samples = ctx.find_elements(By.XPATH, "//div[@class='task-image']")
@@ -327,15 +358,18 @@ class Guarder:
 
         self.runtime_workspace = workspace_
 
-    def captcha_screenshot(self, ctx):
+    def captcha_screenshot(self, ctx, name_screenshot: str = None):
         """
         保存挑战截图，需要在 get_label 之后执行
 
+        :param name_screenshot: filename of the Challenge image
         :param ctx: Webdriver 或 Element
         :return:
         """
         _suffix = self.label_alias.get(self.label, self.label)
-        _filename = f"{int(time.time())}.{_suffix}.png"
+        _filename = (
+            f"{int(time.time())}.{_suffix}.png" if name_screenshot is None else name_screenshot
+        )
         _out_dir = os.path.join(os.path.dirname(self.dir_workspace), "captcha_screenshot")
         _out_path = os.path.join(_out_dir, _filename)
         os.makedirs(_out_dir, exist_ok=True)
@@ -403,21 +437,28 @@ class Guarder:
     def refresh_hcaptcha(ctx: Chrome) -> Optional[bool]:
         try:
             return ctx.find_element(By.XPATH, "//div[@class='refresh button']").click()
-        except NoSuchElementException:
+        except (NoSuchElementException, ElementNotInteractableException):
             return False
 
-    def hacking_dataset(self, ctx):
+    def _hacking_dataset(self, ctx):
+        self.get_label(ctx)
+        self.mark_samples(ctx)
+        self.download_images()
+        self.refresh_hcaptcha(ctx)
+
+    def hacking_dataset(self, ctx, on_worker_handler=None):
         """
         针对 FocusLabel 进行的数据集下载任务
 
+        :param on_worker_handler:
         :param ctx:
         :return:
         """
         try:
-            self.get_label(ctx)
-            self.mark_samples(ctx)
-            self.download_images()
-            self.refresh_hcaptcha(ctx)
+            if on_worker_handler is None:
+                self._hacking_dataset(ctx)
+            else:
+                on_worker_handler(ctx)
         except (ChallengePassed, ElementClickInterceptedException):
             ctx.refresh()
         except StaleElementReferenceException:

@@ -5,3 +5,4 @@
 # Description:
 from .guarder import RainbowClaimer
 from .guarder import Guarder
+from .guarder import CollectorT

@@ -4,12 +4,15 @@
 # Github     : https://github.com/QIN2DIM
 # Description:
 import hashlib
+import json
 import os
 import random
 import time
 from typing import Optional
 
+import requests
 import yaml
+from selenium.common.exceptions import InvalidArgumentException
 
 from .core import Guarder
 
@@ -224,3 +227,82 @@ class RainbowClaimer(Guarder):
         # 更新彩虹表 Hash 值
         with open(path_rainbow_yaml, "rb") as file:
             return hashlib.sha256(file.read()).hexdigest()
+
+
+class CollectorT(RainbowClaimer):
+    def __init__(
+        self,
+        dir_canvas_backup: str = None,
+        sitekey: str = None,
+        lang: Optional[str] = "en",
+        debug: Optional[bool] = None,
+        silence: Optional[bool] = None,
+    ):
+        super().__init__(
+            lang=lang, debug=debug, silence=silence, dir_rainbow_backup="", sitekey=sitekey
+        )
+        self.sitekey = "ace50dd0-0d68-44ff-931a-63b670c7eed7" if sitekey is None else sitekey
+        self.monitor_site = f"https://accounts.hcaptcha.com/demo?sitekey={self.sitekey}"
+
+        self.img_url = ""
+        self.img_path = ""
+
+        self.dir_canvas_backup = "canvas_backup" if dir_canvas_backup is None else dir_canvas_backup
+        os.makedirs(self.dir_canvas_backup, exist_ok=True)
+
+    def get_challenge_prompt(self):
+        """通过OCR或其他技术获知需要框选的目标ID"""
+
+    def get_img_url(self, ctx) -> str:
+        """针对图像区域选择挑战，拦截网络流，返回图片下载链接"""
+        log_type = "performance"
+
+        try:
+            logs_ = ctx.get_log(log_type)
+        except InvalidArgumentException:
+            pass
+        else:
+            for log_ in logs_:
+                message: dict = json.loads(log_.get("message", ""))
+                message: dict = message.get("message", {})
+                _params: dict = message.get("params", {})
+                _response: dict = _params.get("response", {})
+                _url: str = _response.get("url", "")
+                _type: str = _params.get("type", "")
+                _content_length: str = _response.get("headers", {}).get("content-length", "1")
+                if (
+                    _type.lower() == "image"
+                    and _url
+                    and not _url.endswith(".svg")
+                    and int(_content_length) > 12060
+                ):
+                    self.img_url = _url
+                    self.log(message="最大容错临界", content_length=_content_length)
+                    break
+        finally:
+            return self.img_url
+
+    def download_images(self):
+        if not self.img_url.startswith("https://"):
+            return
+
+        resp = requests.get(self.img_url)
+        self.log(f"{resp.headers}")
+
+        content = resp.content
+        filename = f"{hashlib.md5(content).hexdigest()}.jpg"
+        self.img_path = os.path.join(self.dir_canvas_backup, filename)
+
+        with open(self.img_path, "wb") as file:
+            file.write(content)
+
+        head = requests.head(self.img_url)
+        self.log(f"{head.headers}")
+
+    def _hacking_dataset(self, ctx):
+        self.get_img_url(ctx)
+        self.download_images()
+        self.refresh_hcaptcha(ctx)
+
+    def unpack(self):
+        pass

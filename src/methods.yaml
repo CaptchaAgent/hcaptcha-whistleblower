@@ -1,0 +1,16 @@
+!!set
+Network.dataReceived: null
+Network.loadingFinished: null
+Network.requestServedFromCache: null
+Network.requestWillBeSent: null
+Network.requestWillBeSentExtraInfo: null
+Network.resourceChangedPriority: null
+Network.responseReceived: null
+Network.responseReceivedExtraInfo: null
+Page.domContentEventFired: null
+Page.frameAttached: null
+Page.frameNavigated: null
+Page.frameStartedLoading: null
+Page.frameStoppedLoading: null
+Page.loadEventFired: null
+Page.navigatedWithinDocument: null
