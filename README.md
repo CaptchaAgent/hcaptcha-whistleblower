@@ -1,5 +1,10 @@
 # hCaptcha RIP
 
+## Usage
+
+1. [Download Link - Canvas](https://github.com/captcha-challenger/hcaptcha-whistleblower/releases/tag/canvas-challenge) 
+2. [Download Link - Rainbow](https://github.com/captcha-challenger/hcaptcha-whistleblower/releases/tag/rainbow-challenge)
+
 ## Snapshot
 
 ### Canvas
@@ -15,9 +20,6 @@
 <img width="25%" src="https://user-images.githubusercontent.com/62018067/225254118-4ae50855-ee74-4ffa-9596-b911072ce011.png"></div>
 
 ## Dataset
-
-1. [Download Link - Canvas](https://github.com/captcha-challenger/hcaptcha-whistleblower/releases/tag/canvas-challenge) 
-2. [Download Link - Rainbow](https://github.com/captcha-challenger/hcaptcha-whistleblower/releases/tag/rainbow-challenge)
 
 ### Canvas
 
