@@ -1,22 +1,18 @@
 # hCaptcha RIP
 
-## Usage
-
-## Contributors
-
-## Challenge Snapshot
+## Snapshot
 
 ### Canvas
 
-<img width="33%" src="https://user-images.githubusercontent.com/62018067/225252312-8c9ecf27-719b-425b-9fa9-7caa38178205.png"></div>
-<img width="33%" src="https://user-images.githubusercontent.com/62018067/225252455-1ae50459-6ef1-4a5c-a8e2-336ac4feb2ba.png"></div>
-<img width="33%" src="https://user-images.githubusercontent.com/62018067/225254419-397b8124-f515-4b3f-ba34-56054a4dba26.png"></div>
+<img width="25%" src="https://user-images.githubusercontent.com/62018067/225252312-8c9ecf27-719b-425b-9fa9-7caa38178205.png"></div>
+<img width="25%" src="https://user-images.githubusercontent.com/62018067/225252455-1ae50459-6ef1-4a5c-a8e2-336ac4feb2ba.png"></div>
+<img width="25%" src="https://user-images.githubusercontent.com/62018067/225254419-397b8124-f515-4b3f-ba34-56054a4dba26.png"></div>
 
 ### Rainbow
 
-<img width="33%" src="https://user-images.githubusercontent.com/62018067/225254021-6e5f8059-d1a4-4b4f-8027-817ed3d1329c.png"></div>
-<img width="33%" src="https://user-images.githubusercontent.com/62018067/225254050-532c8efd-e209-4073-a9b9-1f6433f1c3d3.png"></div>
-<img width="33%" src="https://user-images.githubusercontent.com/62018067/225254118-4ae50855-ee74-4ffa-9596-b911072ce011.png"></div>
+<img width="25%" src="https://user-images.githubusercontent.com/62018067/225254021-6e5f8059-d1a4-4b4f-8027-817ed3d1329c.png"></div>
+<img width="25%" src="https://user-images.githubusercontent.com/62018067/225254050-532c8efd-e209-4073-a9b9-1f6433f1c3d3.png"></div>
+<img width="25%" src="https://user-images.githubusercontent.com/62018067/225254118-4ae50855-ee74-4ffa-9596-b911072ce011.png"></div>
 
 ## Dataset
 
