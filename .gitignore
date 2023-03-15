@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.idea
+tests
+src/database
+src/model
+src/config.yaml
+src/auto_collecte.py
