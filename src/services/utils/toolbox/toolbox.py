@@ -12,7 +12,6 @@ from typing import Optional, Dict, Any
 import undetected_chromedriver as uc
 import yaml
 from loguru import logger
-from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager, ChromeType
 from webdriver_manager.core.utils import get_browser_version_from_os
 
@@ -148,13 +147,6 @@ def get_challenge_ctx(silence: Optional[bool] = None, lang: Optional[str] = None
     version_main = get_browser_version_from_os(ChromeType.GOOGLE).split(".")[0]
 
     logger.debug("🎮 Activate challenger context")
-    try:
-        return uc.Chrome(
-            options=options, headless=silence, driver_executable_path=driver_executable_path
-        )
-    except WebDriverException:
-        return uc.Chrome(
-            options=options,
-            headless=silence,
-            version_main=int(version_main) if version_main.isdigit() else None,
-        )
+    return uc.Chrome(
+        options=options, headless=silence, driver_executable_path=driver_executable_path
+    )

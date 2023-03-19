@@ -18,6 +18,7 @@ from services.settings import (
 from services.utils import get_challenge_ctx, ToolBox
 
 
+@logger.catch()
 def _interactive_console(
     sitekey=None, silence=None, debug=None, merge=None, unpack=None, on_outdated=None
 ):

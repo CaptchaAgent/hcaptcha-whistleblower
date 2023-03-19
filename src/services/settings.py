@@ -301,18 +301,23 @@ class CollectorSettings:
         # "lease click each image containing red roses in a garden": "red_roses_in_a_garden",
         # "red roses in a garden": "red_roses_in_a_garden",  # 花园中红玫瑰
         # << 2023-02-02 >>
-        "lease click each image containing sunflowers in a field": "sunflowers_in_a_field",  # 田野中包含向日葵
-        "sunflowers in a field": "sunflowers_in_a_field",  # 田野中包含向日葵
-        "desert": "desert",  # 沙漠
-        "mountain": "mountain",
-        "forest": "forest",
-        "daisy in a pot": "daisy_in_a_pot",  # 盆中雏菊
-        "panda in a garden": "panda_in_a_garden",  # 花园中熊猫
-        "panda in a forest": "panda_in_a_forest",  # 森林中熊猫，
-        "burning fire spot like in the examples": "burning_fire_spot",
+        # "lease click each image containing sunflowers in a field": "sunflowers_in_a_field",  # 田野中包含向日葵
+        # "sunflowers in a field": "sunflowers_in_a_field",  # 田野中包含向日葵
+        # "desert": "desert",  # 沙漠
+        # "mountain": "mountain",
+        # "forest": "forest",
+        # "daisy in a pot": "daisy_in_a_pot",  # 盆中雏菊
+        # "panda in a garden": "panda_in_a_garden",  # 花园中熊猫
+        # "panda in a forest": "panda_in_a_forest",  # 森林中熊猫，
+        # "burning fire spot like in the examples": "burning_fire_spot",
         # edc4ce89-8903-4906-80b1-7440ad9a69c8
-        "violin": "violin",  # 小提琴
-        "beach": "beach",  # 海滩
-        "trumpet": "trumpet",  # 小号
-        "guitar": "guitar",  # 吉他
+        # "violin": "violin",  # 小提琴
+        # "beach": "beach",  # 海滩
+        # "trumpet": "trumpet",  # 小号
+        # "guitar": "guitar",  # 吉他
+        # << 2023-03-19 >> c86d730b-300a-444c-a8c5-5312e7a93628
+        "sunny sky": "sunny_sky",  # 晴空
+        "steering wheel": "steering_wheel",  # 方向盘
+        "someone playing golf": "someone_playing_golf",  # 打高尔夫球
+        "someone playing hockey": "someone_playing_hockey",  # 有人打曲棍球
     }

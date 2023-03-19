@@ -11,6 +11,7 @@ import time
 from typing import Optional
 from urllib.request import getproxies
 
+from hcaptcha_challenger import HolyChallenger
 from selenium.common.exceptions import (
     ElementNotVisibleException,
     TimeoutException,
@@ -79,23 +80,6 @@ class Guarder:
         },
     }
 
-    # 左错右对
-    BAD_CODE = {
-        "а": "a",
-        "е": "e",
-        "e": "e",
-        "i": "i",
-        "і": "i",
-        "ο": "o",
-        "с": "c",
-        "ԁ": "d",
-        "ѕ": "s",
-        "һ": "h",
-        "у": "y",
-        "р": "p",
-        "ー": "一",
-        "土": "士",
-    }
     HOOK_CHALLENGE = "//iframe[contains(@title,'content')]"
 
     # <success> Challenge Passed by following the expected
@@ -232,23 +216,11 @@ class Guarder:
         :return:
         """
 
-        def split_prompt_message(prompt_message: str) -> str:
-            """根据指定的语种在提示信息中分离挑战标签"""
-            labels_mirror = {
-                "zh": re.split(r"[包含 图片]", prompt_message)[2][:-1].replace("的每", "")
-                if "包含" in prompt_message
-                else prompt_message,
-                "en": re.split(r"containing a", prompt_message)[-1][1:].strip().replace(".", "")
-                if "containing" in prompt_message
-                else prompt_message,
-            }
-            return labels_mirror[self.lang]
-
         def label_cleaning(raw_label: str) -> str:
             """清洗误码 | 将不规则 UNICODE 字符替换成正常的英文字符"""
             clean_label = raw_label
-            for c in self.BAD_CODE:
-                clean_label = clean_label.replace(c, self.BAD_CODE[c])
+            for c in HolyChallenger.BAD_CODE:
+                clean_label = clean_label.replace(c, HolyChallenger.BAD_CODE[c])
             return clean_label
 
         # Scan and determine the type of challenge.
@@ -278,7 +250,7 @@ class Guarder:
 
         # Continue the `click challenge`
         try:
-            _label = split_prompt_message(prompt_message=self.prompt)
+            _label = HolyChallenger.split_prompt_message(self.prompt, self.lang)
         except (AttributeError, IndexError):
             raise LabelNotFoundException("Get the exception label object")
         else:
@@ -320,7 +292,7 @@ class Guarder:
         class ImageDownloader(AshFramework):
             """Coroutine Booster - Improve the download efficiency of challenge images"""
 
-            http_proxy = getproxies().get("https")
+            http_proxy = getproxies().get("http")
 
             async def control_driver(self, context, session=None):
                 path_challenge_img, url = context

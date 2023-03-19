@@ -43,11 +43,14 @@ class RainbowClaimer(Guarder):
         super().__init__(dir_workspace=dir_challenge, lang=lang, debug=debug, silence=silence)
         self.sitekey = "adafb813-8b5c-473f-9de3-485b4ad5aa09" if sitekey is None else sitekey
         self.monitor_site = f"https://accounts.hcaptcha.com/demo?sitekey={self.sitekey}"
+        logger.debug(f"Focus on --> sitekey::{self.sitekey}")
+        logger.debug(f"Focus on --> monitor::{self.monitor_site}")
 
         # 1. 添加 label_alias
         # ---------------------------------------------------
         # 不在 alias 中的挑战将被跳过
         self.label_alias = {} if not focus_labels else focus_labels
+        logger.debug(f"Focus on --> {set(self.label_alias.values())}")
 
         # 2. 创建彩虹键
         # ---------------------------------------------------

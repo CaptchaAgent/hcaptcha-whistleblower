@@ -5,13 +5,27 @@
 # Description:
 from typing import Optional
 
-from apis.scaffold import collector, sentinel
+from apis.scaffold import collector, sentinel, checker
 
 
 class Scaffold:
     @staticmethod
     def test():
         pass
+
+    @staticmethod
+    def check(prompt: str, lang: Optional[str] = None):
+        """
+        en/zh prompt to model flag
+
+        Usage: python main.py check "请点击每张包含有人打曲棍球的图片"
+        or: python main.py check "Please click each image containing red roses in a garden"
+
+        :param lang: zh/en
+        :param prompt: Challenge Prompt
+        :return:
+        """
+        checker.launch(prompt, lang)
 
     @staticmethod
     def collector(

@@ -323,16 +323,6 @@ class ChallengeCollector(RainbowClaimer):
                 )
             )
             return
-        logger.info(
-            ToolBox.runtime_report(
-                motive="CLAIM",
-                action_name=self.action_name,
-                message="启动采集器",
-                focus=[self.label_alias.keys()],
-                sitekey=self.sitekey,
-                on_outdated=on_outdated,
-            )
-        )
         with suppress(KeyboardInterrupt):
             super().claim(ctx, retries, on_outdated)
         # 退出任务前执行最后一次解包任务

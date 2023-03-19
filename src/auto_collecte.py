@@ -74,7 +74,7 @@ class CollectorG:
 
 
 def _lark_anno_deploy_task(
-    collector: CollectorG, sharelink: str, title: str, count: typing.Optional[int] = None
+        collector: CollectorG, sharelink: str, title: str, count: typing.Optional[int] = None
 ):
     href = f"https://accounts.hcaptcha.com/demo?sitekey={collector.sitekey}"
     content = {
