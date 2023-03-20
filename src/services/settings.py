@@ -17,9 +17,6 @@ PROJECT_ROOT = dirname(dirname(__file__))
 # File database directory
 PROJECT_DATABASE = join(PROJECT_ROOT, "database")
 
-# The storage directory of the YOLO object detection model
-DIR_MODEL = join(PROJECT_ROOT, "model")
-
 PATH_RAINBOW_YAML = join(PROJECT_DATABASE, "rainbow.yaml")
 PATH_PROMPT = join(PROJECT_DATABASE, "prompt.yaml")
 
@@ -45,7 +42,6 @@ logger = ToolBox.init_log(error=join(DIR_LOG, "error.log"), runtime=join(DIR_LOG
 
 for _pending in [
     PROJECT_DATABASE,
-    DIR_MODEL,
     DIR_TEMP_CACHE,
     DIR_CHALLENGE,
     DIR_LOG,
