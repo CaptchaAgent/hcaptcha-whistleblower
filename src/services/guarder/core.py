@@ -3,15 +3,18 @@
 # Author     : QIN2DIM
 # Github     : https://github.com/QIN2DIM
 # Description:
-import asyncio
+from __future__ import annotations
+
 import os
 import re
-import sys
 import time
-from typing import Optional
-from urllib.request import getproxies
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional, Any
 
 from hcaptcha_challenger import HolyChallenger
+from httpx import AsyncClient
+from loguru import logger
 from selenium.common.exceptions import (
     ElementNotVisibleException,
     TimeoutException,
@@ -26,59 +29,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from undetected_chromedriver import Chrome
 
-from services.settings import logger
-from services.utils import AshFramework, ToolBox, get_challenge_ctx
-from .exceptions import ChallengePassed, LabelNotFoundException, ChallengeLangException
-
-DEBUG = True
+from services.guarder.exceptions import ChallengePassed, LabelNotFoundException
+from settings import project, firebird
+from utils.accelerator import AshFramework
+from utils.agents import get_challenge_ctx
 
 
 class Guarder:
     """hCAPTCHA challenge drive control"""
-
-    label_alias = {
-        "zh": {
-            "自行车": "bicycle",
-            "火车": "train",
-            "卡车": "truck",
-            "公交车": "bus",
-            "巴士": "bus",
-            "飞机": "airplane",
-            "一条船": "boat",
-            "船": "boat",
-            "摩托车": "motorcycle",
-            "垂直河流": "vertical river",
-            "天空中向左飞行的飞机": "airplane in the sky flying left",
-            "请选择天空中所有向右飞行的飞机": "airplanes in the sky that are flying to the right",
-            "汽车": "car",
-            "大象": "elephant",
-            "鸟": "bird",
-            "狗": "dog",
-            "犬科动物": "dog",
-            "一匹马": "horse",
-            "长颈鹿": "giraffe",
-        },
-        "en": {
-            "airplane": "airplane",
-            "motorbus": "bus",
-            "bus": "bus",
-            "truck": "truck",
-            "motorcycle": "motorcycle",
-            "boat": "boat",
-            "bicycle": "bicycle",
-            "train": "train",
-            "vertical river": "vertical river",
-            "airplane in the sky flying left": "airplane in the sky flying left",
-            "Please select all airplanes in the sky that are flying to the right": "airplanes in the sky that are flying to the right",
-            "car": "car",
-            "elephant": "elephant",
-            "bird": "bird",
-            "dog": "dog",
-            "canine": "dog",
-            "horse": "horse",
-            "giraffe": "giraffe",
-        },
-    }
 
     HOOK_CHALLENGE = "//iframe[contains(@title,'content')]"
 
@@ -95,31 +53,16 @@ class Guarder:
     # <backcall> (New Challenge) Types of challenges not yet scheduled
     CHALLENGE_BACKCALL = "backcall"
 
-    def __init__(
-        self,
-        dir_workspace: str = None,
-        lang: Optional[str] = "en",
-        debug=False,
-        silence: Optional[bool] = True,
-    ):
-        if not isinstance(lang, str) or not self.label_alias.get(lang):
-            raise ChallengeLangException(
-                f"Challenge language [{lang}] not yet supported."
-                f" -lang={list(self.label_alias.keys())}"
-            )
-
-        self.action_name = "ArmorCaptcha"
-        self.debug = debug
-        self.silence = silence
-
+    def __init__(self):
+        self.silence = False
         # 存储挑战图片的目录
         self.runtime_workspace = ""
         # 挑战截图存储路径
         self.path_screenshot = ""
 
         # 博大精深！
-        self.lang = lang
-        self.label_alias: dict = self.label_alias[lang]
+        self.lang = "en"
+        self.label_alias = firebird.focus_labels
 
         # Store the `element locator` of challenge images {挑战图片1: locator1, ...}
         self.alias2locator = {}
@@ -132,7 +75,7 @@ class Guarder:
         # 挑战提示
         self.prompt = ""
         # 运行缓存
-        self.dir_workspace = dir_workspace if dir_workspace else "."
+        self.workspace_dir = project.workspace_dir
 
         self.threat = 0
         self.ctx_session = None
@@ -148,34 +91,24 @@ class Guarder:
         except AttributeError:
             pass
 
-        logger.success(
-            ToolBox.runtime_report(
-                motive="OFFLOAD",
-                action_name=self.action_name,
-                message=f"Offload {self.action_name} units",
-            )
-        )
+    def flush_firebird(self, label: str):
+        if label.lower().startswith("please click on "):
+            logger.info("非二分类任务，跳过挑战", label=label)
+            return
+        map_to = diagnose_task(label)
+        firebird.to_json({label: map_to})
+        self.label_alias = firebird.flush()
+
+        logger.success("将遇到的新挑战刷入运行时任务队列", label=label, map_to=map_to)
 
     def _init_workspace(self):
         """初始化工作目录，存放缓存的挑战图片"""
         _prefix = (
             f"{time.time()}" + f"_{self.label_alias.get(self.label, '')}" if self.label else ""
         )
-        _workspace = os.path.join(self.dir_workspace, _prefix)
+        _workspace = os.path.join(self.workspace_dir, _prefix)
         os.makedirs(_workspace, exist_ok=True)
         return _workspace
-
-    def log(self, message: str, **params) -> None:
-        """格式化日志信息"""
-        if not self.debug:
-            return
-
-        motive = "Challenge"
-        flag_ = f">> {motive} [{self.action_name}] {message}"
-        if params:
-            flag_ += " - "
-            flag_ += " ".join([f"{i[0]}={i[1]}" for i in params.items()])
-        logger.debug(flag_)
 
     def switch_to_challenge_frame(self, ctx: Chrome) -> str:
         """
@@ -240,8 +173,8 @@ class Guarder:
         # Skip the `draw challenge`
         else:
             fn = f"{int(time.time())}.image_label_area_select.png"
-            self.log(
-                message="Pass challenge",
+            logger.debug(
+                "Pass challenge",
                 challenge="image_label_area_select",
                 site_link=ctx.current_url,
                 screenshot=self.captcha_screenshot(ctx, fn),
@@ -255,15 +188,10 @@ class Guarder:
             raise LabelNotFoundException("Get the exception label object")
         else:
             self.label = label_cleaning(_label)
-            self.log(message="Get label", label=f"「{self.label}」")
+            logger.debug("Get label", label=self.label)
 
     def mark_samples(self, ctx: Chrome):
-        """
-        Get the download link and locator of each challenge image
-
-        :param ctx:
-        :return:
-        """
+        """Get the download link and locator of each challenge image"""
         # 等待图片加载完成
         try:
             WebDriverWait(ctx, 5, ignored_exceptions=(ElementNotVisibleException,)).until(
@@ -289,38 +217,27 @@ class Guarder:
             self.alias2locator.update({alias: sample})
 
     def download_images(self):
+        @dataclass
         class ImageDownloader(AshFramework):
-            """Coroutine Booster - Improve the download efficiency of challenge images"""
-
-            http_proxy = getproxies().get("http")
-
-            async def control_driver(self, context, session=None):
-                path_challenge_img, url = context
-
-                # Download Challenge Image
-                async with session.get(url, proxy=self.http_proxy) as response:
-                    with open(path_challenge_img, "wb") as file:
-                        file.write(await response.read())
+            async def control_driver(self, context: Any, client: AsyncClient):
+                (img_path, url) = context
+                resp = await client.get(url)
+                img_path.write_bytes(resp.content)
 
         # Initialize the challenge image download directory
-        workspace_ = self._init_workspace()
+        workspace_ = Path(self._init_workspace())
 
         # Initialize the data container
         docker_ = []
         for alias_, url_ in self.alias2url.items():
-            path_challenge_img_ = os.path.join(workspace_, f"{alias_}.png")
+            path_challenge_img_ = workspace_.joinpath(f"{alias_}.png")
             self.alias2path.update({alias_: path_challenge_img_})
             docker_.append((path_challenge_img_, url_))
 
         # Initialize the coroutine-based image downloader
         start = time.time()
-        if sys.platform.startswith("win") or "cygwin" in sys.platform:
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-            asyncio.run(ImageDownloader(docker=docker_).subvert(workers="fast"))
-        else:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(ImageDownloader(docker=docker_).subvert(workers="fast"))
-        self.log(message="Download challenge images", timeit=f"{round(time.time() - start, 2)}s")
+        ImageDownloader(docker_).execute()
+        logger.debug("Download challenge images", timeit=f"{round(time.time() - start, 2)}s")
 
         self.runtime_workspace = workspace_
 
@@ -336,7 +253,7 @@ class Guarder:
         _filename = (
             f"{int(time.time())}.{_suffix}.png" if name_screenshot is None else name_screenshot
         )
-        _out_dir = os.path.join(os.path.dirname(self.dir_workspace), "captcha_screenshot")
+        _out_dir = os.path.join(os.path.dirname(self.workspace_dir), "captcha_screenshot")
         _out_path = os.path.join(_out_dir, _filename)
         os.makedirs(_out_dir, exist_ok=True)
 
@@ -346,28 +263,15 @@ class Guarder:
         except AttributeError:
             ctx.save_screenshot(_out_path)
         except Exception as err:
-            logger.exception(
-                ToolBox.runtime_report(
-                    motive="SCREENSHOT",
-                    action_name=self.action_name,
-                    message="挑战截图保存失败，错误的参数类型",
-                    type=type(ctx),
-                    err=err,
-                )
-            )
+            logger.exception("挑战截图保存失败，错误的参数类型", type=type(ctx), err=err)
+
         finally:
             return _out_path
 
     def tactical_alert(self, ctx):
         """新挑战预警"""
         logger.warning(
-            ToolBox.runtime_report(
-                motive="ALERT",
-                action_name=self.action_name,
-                message="Types of challenges not yet scheduled",
-                label=f"「{self.label}」",
-                prompt=f"「{self.prompt}」",
-            )
+            "Types of challenges not yet scheduled", label=self.label, prompt=self.prompt
         )
 
         # 保存挑战截图 | 返回截图存储路径
@@ -391,7 +295,7 @@ class Guarder:
                 )
                 # [👻] 点击复选框
                 WebDriverWait(ctx, 2).until(EC.element_to_be_clickable((By.ID, "checkbox"))).click()
-                self.log("Handle hCaptcha checkbox")
+                logger.debug("Handle hCaptcha checkbox")
                 return True
             except TimeoutException:
                 pass
@@ -447,7 +351,9 @@ class Guarder:
             # 拉起预警服务
             if not self.label_alias.get(self.label):
                 self.mark_samples(ctx)
-                return self.tactical_alert(ctx)
+                self.tactical_alert(ctx)
+                self.flush_firebird(self.label)
+                return True
             # 在内联框架中刷新挑战
             self.refresh_hcaptcha(ctx)
         except (ChallengePassed, TimeoutException):
@@ -480,3 +386,43 @@ class ArmorUtils:
             return True
         except TimeoutException:
             return False
+
+
+def diagnose_task(words: str) -> str:
+    """from challenge prompt to model name"""
+    origin = words
+    if not words or not isinstance(words, str) or len(words) < 2:
+        raise TypeError(f"({words})TASK should be string type data")
+
+    # Filename contains illegal characters
+    inv = {"\\", "/", ":", "*", "?", "<", ">", "|"}
+    if s := set(words) & inv:
+        raise TypeError(f"({words})TASK contains invalid characters({s})")
+
+    # Normalized separator
+    rnv = {" ", ",", "-"}
+    for s in rnv:
+        words = words.replace(s, "_")
+
+    # Convert bad code
+    badcode = {
+        "а": "a",
+        "е": "e",
+        "e": "e",
+        "i": "i",
+        "і": "i",
+        "ο": "o",
+        "с": "c",
+        "ԁ": "d",
+        "ѕ": "s",
+        "һ": "h",
+        "у": "y",
+        "р": "p",
+    }
+    for code, right_code in badcode.items():
+        words.replace(code, right_code)
+
+    words = words.strip()
+    logger.debug(f"diagnose task", origin=origin, to=words)
+
+    return words

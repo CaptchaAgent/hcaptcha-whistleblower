@@ -19,11 +19,9 @@ from urllib.request import getproxies
 
 import pytz
 import requests
+from loguru import logger
 from requests.exceptions import ConnectionError
 from requests_toolbelt import MultipartEncoder
-
-from services.settings import logger
-from services.utils import ToolBox
 
 
 class TypeMessage:
@@ -51,11 +49,6 @@ class LarkT:
         self.action_name = "LarkT"
         self.access_token = ""
         self.expire = int(time.time())
-
-    def log(self, msg: str = "", **params):
-        if not self.debug:
-            return
-        logger.debug(ToolBox.runtime_report("RUNTIME", self.action_name, msg, **params))
 
     @staticmethod
     def _postman(
@@ -174,13 +167,15 @@ class LarkAPI(LarkT):
             },
         )
         if not data or err:
-            self.log("文本翻译异常", text=text, src=source_language, dst=target_language, response=data)
+            logger.debug(
+                "文本翻译异常", text=text, src=source_language, dst=target_language, response=data
+            )
         return data.get("data", {}).get("text", "")
 
     def upload_files(self, file_type: str, file_path):
         file_type_list = ["opus", "mp4", "pdf", "doc", "xls", "ppt", "stream"]
         if file_type not in file_type_list:
-            return self.log("文件格式异常", type=file_type, select_type=file_type_list)
+            return logger.debug("文件格式异常", type=file_type, select_type=file_type_list)
 
         filename = os.path.basename(file_path)
         form = {"file_type": file_type, "file_name": filename, "file": open(file_path, "rb")}
@@ -195,7 +190,7 @@ class LarkAPI(LarkT):
             data=multi_form,
         )
         if err or not data:
-            self.log("上传文件异常", file_type=file_type, file_path=file_path, response=data)
+            logger.debug("上传文件异常", file_type=file_type, file_path=file_path, response=data)
         return data
 
     def upload_img(self, image_path: str):
@@ -208,7 +203,7 @@ class LarkAPI(LarkT):
         :return:
         """
         if not os.path.exists(image_path):
-            return self.log("文件不存在", image_path=image_path)
+            return logger.debug("文件不存在", image_path=image_path)
 
         form = {"image_type": "message", "image": (open(image_path, "rb"))}
         multi_form = MultipartEncoder(form)
@@ -222,7 +217,7 @@ class LarkAPI(LarkT):
             data=multi_form,
         )
         if err or not data:
-            self.log("图片上传失败", image_path=image_path, response=data)
+            logger.debug("图片上传失败", image_path=image_path, response=data)
         return data
 
     def send_group_msg(self, chat_id: str, content: dict, msg_type: str = TypeMessage.text):
@@ -245,7 +240,7 @@ class LarkAPI(LarkT):
             "share_user",
         ]
         if msg_type not in msg_type_list:
-            return self.log("消息格式异常", type=msg_type, select_type=msg_type_list)
+            return logger.debug("消息格式异常", type=msg_type, select_type=msg_type_list)
 
         data, err = self._postman(
             url="https://open.feishu.cn/open-apis/im/v1/messages",
@@ -257,7 +252,7 @@ class LarkAPI(LarkT):
             body={"receive_id": chat_id, "content": json.dumps(content), "msg_type": msg_type},
         )
         if err or not data:
-            self.log("群消息发送失败", data=data)
+            logger.debug("群消息发送失败", data=data)
         return data
 
 

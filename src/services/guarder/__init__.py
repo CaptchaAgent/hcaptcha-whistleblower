@@ -3,6 +3,6 @@
 # Author     : QIN2DIM
 # Github     : https://github.com/QIN2DIM
 # Description:
-from .guarder import CollectorT
+from .canvas_mining import CollectorT
 from .guarder import Guarder
 from .guarder import RainbowClaimer
