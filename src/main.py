@@ -3,7 +3,6 @@
 # Author     : QIN2DIM
 # GitHub     : https://github.com/QIN2DIM
 # Description: 👻 哟！Lark飞书人！
-
 from __future__ import annotations
 
 from contextlib import suppress
