@@ -137,4 +137,4 @@ src/apis/runpo.py
 
 database**/
 logs/
-src/config.json
+config.json
